@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { FaTiktok } from "react-icons/fa";
 
 interface ProductType {
   id: number;
@@ -13,8 +14,8 @@ const products: ProductType[] = [
     section: "Menu",
     link: [
       { label: "Home", url: "/" },
-      { label: "Request a Tutor", url: "/request-for-tutors" },
-      { label: "Register a Tutor", url: "/register-tutor" },
+      { label: "Request for Tutor", url: "/request-for-tutors" },
+      { label: "Register as a Tutor", url: "/register-tutor" },
       { label: "Contact Us", url: "/#keep-in-touch-section" },
     ],
   },
@@ -23,16 +24,17 @@ const products: ProductType[] = [
     section: "Resources",
     link: [
       { label: "Blog", url: "/blogs" },
-      { label: "FAQs", url: "/#faq-section" },
+      { label: "Testimonials", url: "/#testimonials-section" },
+      { label: "FAQs", url: "/faq" },
+      { label: "About Us", url: "/#aboutus-section" },
     ],
   },
   {
     id: 3,
     section: "Academics",
     link: [
-      { label: "Grades", url: "/grades" },
-      { label: "Subjects", url: "/subjects" },
-      { label: "Test Papers", url: "/test-papers" },
+      { label: "Grades & Subjects", url: "/grades-and-subjects" },
+      { label: "Past Exam Papers", url: "/past-exam-papers" },
     ],
   },
   {
@@ -44,46 +46,54 @@ const products: ProductType[] = [
 
 const footer = () => {
   return (
-    <div className="bg-black" id="first-section">
-      <div className="mx-auto max-w-2xl pt-4 pb-16 px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-        <div className="mt-24 grid grid-cols-1 gap-y-10 gap-x-16 sm:grid-cols-2 lg:grid-cols-12 xl:gap-x-8">
+    <div className="bg-navyblue" id="first-section">
+      <div className="mx-auto max-w-2xl pt-4 pb-4 px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+        <div className="mt-4 mb-5 grid grid-cols-2 gap-y-8 gap-x-6 text-center sm:grid-cols-2 sm:text-left lg:grid-cols-12 lg:gap-x-16 xl:gap-x-8">
           {/* COLUMN-1 */}
-
-          <div className="col-span-4">
-            <h3 className="text-white text-4xl font-semibold leading-9 mb-4 lg:mb-20">
-              {" "}
+          <div className="col-span-2 lg:col-span-4">
+            <h3 className="text-white text-2xl font-bold leading-snug mb-4 lg:mb-10">
               Tuition Lanka
             </h3>
-            <div className="flex gap-4">
+
+            <div className="flex justify-center gap-4 sm:justify-start">
               <div className="footer-icons">
-                <Link href="#">
+                <a
+                  href={process.env.NEXT_PUBLIC_FACEBOOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Image
                     src={"/images/footer/vec.svg"}
                     alt="facebook"
                     width={15}
                     height={20}
                   />
-                </Link>
+                </a>
               </div>
+
               <div className="footer-icons">
-                <Link href="#">
-                  <Image
-                    src={"/images/footer/twitter.svg"}
-                    alt="twitter"
-                    width={20}
-                    height={20}
-                  />
-                </Link>
+                <a
+                  href={process.env.NEXT_PUBLIC_TIKTOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FaTiktok className="text-white" size={20} />
+                </a>
               </div>
+
               <div className="footer-icons">
-                <Link href="#">
+                <a
+                  href={process.env.NEXT_PUBLIC_INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Image
                     src={"/images/footer/instagram.svg"}
                     alt="instagram"
                     width={20}
                     height={20}
                   />
-                </Link>
+                </a>
               </div>
             </div>
           </div>
@@ -91,16 +101,19 @@ const footer = () => {
           {/* COLUMN-2/3 */}
 
           {products.map((product) => (
-            <div key={product.id} className="group relative col-span-2">
-              <p className="text-white text-xl font-extrabold mb-9">
+            <div
+              key={product.id}
+              className="group relative col-span-1 sm:col-span-1 lg:col-span-2"
+            >
+              <p className="text-white text-sm font-bold uppercase tracking-widest mb-2">
                 {product.section}
               </p>
               <ul>
                 {product.link.map((linkObj, index) => (
-                  <li key={index} className="mb-5">
+                  <li key={index}>
                     <Link
                       href={linkObj.url}
-                      className="text-white text-lg font-normal mb-6 hover:text-gray-300 transition"
+                      className="text-white text-sm font-normal mb-4 hover:text-gray-300 transition"
                     >
                       {linkObj.label}
                     </Link>
@@ -113,21 +126,23 @@ const footer = () => {
       </div>
 
       <div className="mx-auto max-w-2xl lg:max-w-7xl">
-        <div className="pt-5 pb-5 px-4 sm:px-6 lg:px-4 border-solid border-t border-footer">
-          <div className="mt-4 grid grid-cols-1 gap-y-10 gap-x-16 sm:grid-cols-2 xl:gap-x-8">
+        <div className="pb-5 px-4 sm:px-6 lg:px-4 border-solid border-t border-footer">
+          <div className="mt-4 grid grid-cols-1 gap-y-5 gap-x-16 sm:grid-cols-2 xl:gap-x-8">
             <div>
-              <h3 className="text-center md:text-start text-offwhite text-lg">
-                @2024 - All Rights Reserved by tuitionlanka.com
-              </h3>
+              <p className="text-center md:text-start text-offwhite text-sm">
+                @2026 - All Rights Reserved by Tuition Lanka
+              </p>
             </div>
             <div className="flex justify-center md:justify-end">
-              <Link href="/">
-                <h3 className="text-offwhite pr-6">Privacy policy</h3>
+              <Link href="/privacy-policy">
+                <p className="text-offwhite text-sm pr-6 hover:text-gray-300 transition">
+                  Privacy policy
+                </p>
               </Link>
-              <Link href="/">
-                <h3 className="text-offwhite pl-6 border-solid border-l border-footer">
-                  Terms & conditions
-                </h3>
+              <Link href="/terms-and-conditions">
+                <p className="text-offwhite text-sm pl-6 border-solid border-l border-footer hover:text-gray-300 transition">
+                  Terms &amp; conditions
+                </p>
               </Link>
             </div>
           </div>

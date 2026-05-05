@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -37,18 +37,37 @@ import Image from "next/image";
 import { districts } from "@/configs/districts";
 import CitySelect from "@/components/citySelect";
 import DistrictSelect from "@/components/districtSelect";
+import {
+  collapseTextSpaces,
+  removeWhitespace,
+  stripLeadingSpaces,
+} from "@/utils/form-normalizers";
+import {
+  CLASS_TYPE_OPTIONS,
+  MEDIUM_OPTIONS,
+  REQUEST_TUTOR_DURATION_OPTIONS,
+  REQUEST_TUTOR_FREQUENCY_OPTIONS,
+  TUTOR_TYPE_OPTIONS,
+} from "@/configs/options";
 
 /** ── Shared style tokens (mirrors register-tutor standard) ── */
-const fieldWrapper = "flex flex-col gap-1";
-const inputClass = "h-11";
+const fieldWrapper = "flex flex-col gap-2";
+const inputClass = "h-11 text-sm placeholder:text-gray-500 text-gray-900";
 const selectClass =
-  "h-11 w-full rounded-md border bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors duration-150";
+  "h-11 w-full rounded-md border bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors duration-150 text-gray-900";
 const selectBorder = (hasError: boolean) =>
   hasError ? "border-red-500" : "border-gray-300";
-const errorMsg = "text-sm text-red-500 min-h-[1.25rem]";
+const errorMsg = "text-xs text-red-500 min-h-[1.25rem]";
+const primaryActionButtonClassName = "bg-blue-600 text-white hover:bg-blue-700";
 
 const FETCH_LIMIT = LIMITS_CONFIG.FETCH_LIMIT;
 const MAX_TUTOR_OPTIONS = LIMITS_CONFIG.MAX_TUTOR_OPTIONS;
+
+const preventWhitespaceKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  if (/\s/.test(event.key)) {
+    event.preventDefault();
+  }
+};
 
 type TabKey = "contact" | "tutorDetails";
 const TAB_ORDER: TabKey[] = ["contact", "tutorDetails"];
@@ -102,6 +121,11 @@ export default function AddRequestForTutor() {
 
   const currentIndex = TAB_ORDER.indexOf(tab);
 
+  const changeStep = (nextTab: TabKey) => {
+    setTab(nextTab);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   useEffect(() => {
     const currentCount = tutors.length;
     if (selectedTutorCount > currentCount) {
@@ -110,9 +134,10 @@ export default function AddRequestForTutor() {
         newTutors.push({
           subject: "",
           assignedTutor: "",
-          duration: "30 Minutes",
-          frequency: "Once a Week",
-          preferredTutorType: "Part Time Tutors",
+          duration: "",
+          frequency: "",
+          preferredTutorType: "",
+          preferredClassType: "",
         });
       }
       setValue("tutors", newTutors);
@@ -127,6 +152,16 @@ export default function AddRequestForTutor() {
     }
   }, [selectedTutorCount, tutors, setValue]);
 
+  // Reset subject for every tutor when grade changes (skip initial mount)
+  const isFirstGradeMount = useRef(true);
+  useEffect(() => {
+    if (isFirstGradeMount.current) {
+      isFirstGradeMount.current = false;
+      return;
+    }
+    tutors.forEach((_, i) => setValue(`tutors.${i}.subject`, ""));
+  }, [selectedGradeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const nextStep = async () => {
     if (tab === "contact") {
       const valid = await trigger([
@@ -138,11 +173,11 @@ export default function AddRequestForTutor() {
       ]);
       if (!valid) return;
     }
-    setTab(TAB_ORDER[currentIndex + 1]);
+    changeStep(TAB_ORDER[currentIndex + 1]);
   };
 
   const prevStep = () => {
-    setTab(TAB_ORDER[currentIndex - 1]);
+    changeStep(TAB_ORDER[currentIndex - 1]);
   };
 
   const onSubmit = async (data: CreateRequestTutorSchema) => {
@@ -175,9 +210,9 @@ export default function AddRequestForTutor() {
 
   return (
     <div className="mx-auto max-w-7xl my-10 px-6 lg:px-8">
-      <div className="text-2xl flex flex-row gap-2 items-center px-6 font-bold mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl">
+      <div className="text-3xl flex flex-row gap-2 items-center px-6 font-bold mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl">
         <Image height={50} width={50} src={LogoImage} alt="Logo image" />
-        <h1>Request A Tutor</h1>
+        <h1 className="text-3xl text-white font-bold">Request for Tutor</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -186,15 +221,34 @@ export default function AddRequestForTutor() {
           <TabsContent value="contact">
             <Card>
               <CardHeader>
-                <CardTitle>Contact Details</CardTitle>
+                <CardTitle className="text-base font-medium">
+                  Contact Details
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {/* Full Name */}
                 <div className={fieldWrapper}>
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label className="text-sm" htmlFor="name">
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="name"
-                    {...register("name")}
+                    {...register("name", {
+                      onChange: (e) => {
+                        // strip leading spaces as the user types
+                        const cleaned = stripLeadingSpaces(e.target.value);
+                        if (cleaned !== e.target.value) {
+                          e.target.value = cleaned;
+                          setValue("name", cleaned, { shouldValidate: true });
+                        }
+                      },
+                      onBlur: (e) => {
+                        // fully normalize on blur (collapse multiple spaces too)
+                        setValue("name", collapseTextSpaces(e.target.value), {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
                     placeholder="e.g. Nimal Perera"
                     autoComplete="name"
                     className={`${inputClass} ${errors.name ? "border-red-500" : "border-gray-300"}`}
@@ -211,13 +265,32 @@ export default function AddRequestForTutor() {
                 {/* Email & Phone */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className={fieldWrapper}>
-                    <Label htmlFor="email">Email *</Label>
+                    <Label className="text-sm" htmlFor="email">
+                      Email <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="e.g. johndoe@gmail.com"
                       autoComplete="email"
-                      {...register("email")}
+                      onKeyDown={preventWhitespaceKey}
+                      {...register("email", {
+                        onChange: (e) => {
+                          // strip every space character as the user types
+                          const noSpaces = removeWhitespace(e.target.value);
+                          if (noSpaces !== e.target.value) {
+                            e.target.value = noSpaces;
+                            setValue("email", noSpaces, {
+                              shouldValidate: true,
+                            });
+                          }
+                        },
+                        onBlur: (e) => {
+                          setValue("email", removeWhitespace(e.target.value), {
+                            shouldValidate: true,
+                          });
+                        },
+                      })}
                       className={`${inputClass} ${errors.email ? "border-red-500" : "border-gray-300"}`}
                     />
                     {errors.email ? (
@@ -229,7 +302,9 @@ export default function AddRequestForTutor() {
                     )}
                   </div>
                   <div className={fieldWrapper}>
-                    <Label htmlFor="phoneNumber">Phone Number *</Label>
+                    <Label className="text-sm" htmlFor="phoneNumber">
+                      Contact Number <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="phoneNumber"
                       type="tel"
@@ -237,58 +312,100 @@ export default function AddRequestForTutor() {
                       maxLength={10}
                       placeholder="e.g. 0712345678"
                       autoComplete="tel"
-                      {...register("phoneNumber")}
+                      onKeyDown={preventWhitespaceKey}
+                      {...register("phoneNumber", {
+                        onChange: (e) => {
+                          // strip every space character as the user types
+                          const noSpaces = removeWhitespace(e.target.value);
+                          if (noSpaces !== e.target.value) {
+                            e.target.value = noSpaces;
+                            setValue("phoneNumber", noSpaces, {
+                              shouldValidate: true,
+                            });
+                          }
+                        },
+                        onBlur: (e) => {
+                          setValue(
+                            "phoneNumber",
+                            removeWhitespace(e.target.value),
+                            {
+                              shouldValidate: true,
+                            },
+                          );
+                        },
+                      })}
                       className={`${inputClass} ${errors.phoneNumber ? "border-red-500" : "border-gray-300"}`}
                     />
                     {errors.phoneNumber ? (
                       <p className={errorMsg}>{errors.phoneNumber?.message}</p>
                     ) : (
                       <p className="text-xs text-muted-foreground min-h-[1.25rem]">
-                        10-digit mobile number (digits only)
+                        Contact number should be exactly 10 digits
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* District */}
-                <div className={fieldWrapper}>
-                  <Label htmlFor="district">District *</Label>
-                  <Controller
-                    control={control}
-                    name="district"
-                    render={({ field }) => (
-                      <DistrictSelect
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        districts={districts}
-                        hasError={!!errors.district}
-                      />
+                {/* District + City – grouped to reduce spacing between them */}
+                <div className="flex flex-col gap-4">
+                  {/* District */}
+                  <div className={fieldWrapper}>
+                    <Label className="text-sm" htmlFor="district">
+                      District <span className="text-red-500">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="district"
+                      render={({ field }) => (
+                        <DistrictSelect
+                          value={field.value || ""}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            if (val) clearErrors("district");
+                          }}
+                          districts={districts}
+                          hasError={!!errors.district}
+                        />
+                      )}
+                    />
+                    {errors.district?.message && (
+                      <p className={errorMsg}>{errors.district.message}</p>
                     )}
-                  />
-                  <p className={errorMsg}>{errors.district?.message}</p>
-                </div>
+                  </div>
 
-                {/* City */}
-                <div className={fieldWrapper}>
-                  <Label htmlFor="city">City *</Label>
-                  <Controller
-                    control={control}
-                    name="city"
-                    render={({ field }) => (
-                      <CitySelect
-                        value={field.value || ""}
-                        district={selectedDistrict || ""}
-                        onChange={field.onChange}
-                        hasError={!!errors.city}
-                      />
+                  {/* City */}
+                  <div className={fieldWrapper}>
+                    <Label className="text-sm" htmlFor="city">
+                      City <span className="text-red-500">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="city"
+                      render={({ field }) => (
+                        <CitySelect
+                          value={field.value || ""}
+                          district={selectedDistrict || ""}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            if (val) clearErrors("city");
+                          }}
+                          hasError={!!errors.city}
+                        />
+                      )}
+                    />
+                    {errors.city?.message && (
+                      <p className={errorMsg}>{errors.city.message}</p>
                     )}
-                  />
-                  <p className={errorMsg}>{errors.city?.message}</p>
+                  </div>
                 </div>
               </CardContent>
 
               <CardFooter className="flex justify-end">
-                <Button type="button" onClick={nextStep}>
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className={primaryActionButtonClassName}
+                >
                   Next
                 </Button>
               </CardFooter>
@@ -299,12 +416,16 @@ export default function AddRequestForTutor() {
           <TabsContent value="tutorDetails">
             <Card>
               <CardHeader>
-                <CardTitle>Tutor Details</CardTitle>
+                <CardTitle className="text-base font-medium">
+                  Tutor Details
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {/* Medium */}
                 <div className={fieldWrapper}>
-                  <Label htmlFor="medium">Medium *</Label>
+                  <Label className="text-sm" htmlFor="medium">
+                    Medium <span className="text-red-500">*</span>
+                  </Label>
                   <select
                     id="medium"
                     {...register("medium")}
@@ -313,16 +434,20 @@ export default function AddRequestForTutor() {
                     <option value="" disabled hidden>
                       Select medium of instruction
                     </option>
-                    <option value="Sinhala">Sinhala</option>
-                    <option value="English">English</option>
-                    <option value="Tamil">Tamil</option>
+                    {MEDIUM_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.text}
+                      </option>
+                    ))}
                   </select>
                   <p className={errorMsg}>{errors.medium?.message}</p>
                 </div>
 
                 {/* Grade */}
                 <div className={fieldWrapper}>
-                  <Label htmlFor="grade">Grade *</Label>
+                  <Label className="text-sm" htmlFor="grade">
+                    Grade <span className="text-red-500">*</span>
+                  </Label>
                   <select
                     id="grade"
                     {...register("grade")}
@@ -342,7 +467,9 @@ export default function AddRequestForTutor() {
 
                 {/* Number of Tutors */}
                 <div className={fieldWrapper}>
-                  <Label htmlFor="tutorCount">Number of Tutors</Label>
+                  <Label className="text-sm" htmlFor="tutorCount">
+                    Number of Tutors
+                  </Label>
                   <select
                     id="tutorCount"
                     value={selectedTutorCount}
@@ -368,15 +495,20 @@ export default function AddRequestForTutor() {
                     key={index}
                     className="p-4 border border-gray-200 rounded-md"
                   >
-                    <h3 className="font-semibold mb-3">Tutor {index + 1}</h3>
+                    <h3 className="text-base font-semibold mb-3">
+                      Tutor {index + 1}
+                    </h3>
 
                     {/* Subject */}
                     <div className={`${fieldWrapper} mb-4`}>
-                      <Label htmlFor={`subject-${index}`}>Subject *</Label>
+                      <Label className="text-sm" htmlFor={`subject-${index}`}>
+                        Subject <span className="text-red-500">*</span>
+                      </Label>
                       <select
                         id={`subject-${index}`}
                         {...register(`tutors.${index}.subject`)}
-                        className={`${selectClass} ${selectBorder(!!errors.tutors?.[index]?.subject)}`}
+                        disabled={!selectedGradeId}
+                        className={`${selectClass} ${selectBorder(!!errors.tutors?.[index]?.subject)} disabled:bg-gray-100 disabled:cursor-not-allowed`}
                       >
                         <option value="" disabled hidden>
                           {selectedGradeId
@@ -397,7 +529,12 @@ export default function AddRequestForTutor() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Duration */}
                       <div className={fieldWrapper}>
-                        <Label htmlFor={`duration-${index}`}>Duration *</Label>
+                        <Label
+                          className="text-sm"
+                          htmlFor={`duration-${index}`}
+                        >
+                          Duration <span className="text-red-500">*</span>
+                        </Label>
                         <select
                           id={`duration-${index}`}
                           {...register(`tutors.${index}.duration`)}
@@ -406,9 +543,11 @@ export default function AddRequestForTutor() {
                           <option value="" disabled hidden>
                             Select session duration
                           </option>
-                          <option value="30 Minutes">30 Minutes</option>
-                          <option value="One Hour">1 Hour</option>
-                          <option value="Two Hours">2 Hours</option>
+                          {REQUEST_TUTOR_DURATION_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.text}
+                            </option>
+                          ))}
                         </select>
                         <p className={errorMsg}>
                           {errors.tutors?.[index]?.duration?.message}
@@ -417,8 +556,11 @@ export default function AddRequestForTutor() {
 
                       {/* Frequency */}
                       <div className={fieldWrapper}>
-                        <Label htmlFor={`frequency-${index}`}>
-                          Frequency *
+                        <Label
+                          className="text-sm"
+                          htmlFor={`frequency-${index}`}
+                        >
+                          Frequency <span className="text-red-500">*</span>
                         </Label>
                         <select
                           id={`frequency-${index}`}
@@ -428,9 +570,11 @@ export default function AddRequestForTutor() {
                           <option value="" disabled hidden>
                             Select sessions per week
                           </option>
-                          <option value="Once a Week">Once a Week</option>
-                          <option value="Twice a Week">Twice a Week</option>
-                          <option value="Daily">Daily</option>
+                          {REQUEST_TUTOR_FREQUENCY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.text}
+                            </option>
+                          ))}
                         </select>
                         <p className={errorMsg}>
                           {errors.tutors?.[index]?.frequency?.message}
@@ -438,32 +582,61 @@ export default function AddRequestForTutor() {
                       </div>
                     </div>
 
-                    {/* Preferred Tutor Type */}
-                    <div className={`${fieldWrapper} mt-4`}>
-                      <Label htmlFor={`tutorType-${index}`}>
-                        Preferred Tutor Type *
-                      </Label>
-                      <select
-                        id={`tutorType-${index}`}
-                        {...register(`tutors.${index}.preferredTutorType`)}
-                        className={`${selectClass} ${selectBorder(!!errors.tutors?.[index]?.preferredTutorType)}`}
-                      >
-                        <option value="" disabled hidden>
-                          Select preferred tutor type
-                        </option>
-                        <option value="Part Time Tutors">
-                          Part Time Tutors
-                        </option>
-                        <option value="Full Time Tutors">
-                          Full Time Tutors
-                        </option>
-                        <option value="Ex / Current Government School Tutors">
-                          Ex / Current Government School Tutors
-                        </option>
-                      </select>
-                      <p className={errorMsg}>
-                        {errors.tutors?.[index]?.preferredTutorType?.message}
-                      </p>
+                    {/* Preferred Tutor Type + Preferred Class Type */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                      <div className={fieldWrapper}>
+                        <Label
+                          className="text-sm"
+                          htmlFor={`tutorType-${index}`}
+                        >
+                          Preferred Tutor Type{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <select
+                          id={`tutorType-${index}`}
+                          {...register(`tutors.${index}.preferredTutorType`)}
+                          className={`${selectClass} ${selectBorder(!!errors.tutors?.[index]?.preferredTutorType)}`}
+                        >
+                          <option value="" disabled hidden>
+                            Select preferred tutor type
+                          </option>
+                          {TUTOR_TYPE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.text}
+                            </option>
+                          ))}
+                        </select>
+                        <p className={errorMsg}>
+                          {errors.tutors?.[index]?.preferredTutorType?.message}
+                        </p>
+                      </div>
+
+                      <div className={fieldWrapper}>
+                        <Label
+                          className="text-sm"
+                          htmlFor={`classType-${index}`}
+                        >
+                          Preferred Class Type{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <select
+                          id={`classType-${index}`}
+                          {...register(`tutors.${index}.preferredClassType`)}
+                          className={`${selectClass} ${selectBorder(!!errors.tutors?.[index]?.preferredClassType)}`}
+                        >
+                          <option value="" disabled hidden>
+                            Select preferred class type
+                          </option>
+                          {CLASS_TYPE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.text}
+                            </option>
+                          ))}
+                        </select>
+                        <p className={errorMsg}>
+                          {errors.tutors?.[index]?.preferredClassType?.message}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -473,7 +646,11 @@ export default function AddRequestForTutor() {
                 <Button type="button" variant="outline" onClick={prevStep}>
                   Previous
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className={primaryActionButtonClassName}
+                >
                   {isLoading ? "Submitting..." : "Submit"}
                 </Button>
               </CardFooter>
@@ -508,10 +685,10 @@ export default function AddRequestForTutor() {
             </div>
           </div>
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
-              Request Submitted!
+            <DialogTitle className="text-center text-xl font-semibold">
+              Request is processing
             </DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogDescription className="text-center text-base">
               Your tutor request has been submitted successfully. We&apos;ll
               match you with a suitable tutor and get back to you shortly.
             </DialogDescription>
@@ -556,10 +733,10 @@ export default function AddRequestForTutor() {
             </div>
           </div>
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
+            <DialogTitle className="text-center text-xl font-semibold">
               Submission Failed
             </DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogDescription className="text-center text-base">
               Something went wrong.
             </DialogDescription>
           </DialogHeader>

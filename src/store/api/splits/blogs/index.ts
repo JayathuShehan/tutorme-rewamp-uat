@@ -3,6 +3,7 @@ import { PaginatedResponse, Blogs } from "@/types/response-types";
 import { baseApi } from "../..";
 import { Endpoints } from "../../endpoints";
 import { CreateArticleSchema } from "@/app/blogs/components/create-blog/schema";
+import type { BlogStatus } from "@/configs/options";
 
 export const BlogsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -24,6 +25,16 @@ export const BlogsApi = baseApi.injectEndpoints({
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "Blogs" as const, id }],
+    }),
+
+    /** SEO-friendly lookup: GET /blogs/slug/:slug */
+    fetchBlogBySlug: build.query<Blogs, string>({
+      query: (slug) => ({
+        url: `${Endpoints.Blogs}/slug/${slug}`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result ? [{ type: "Blogs" as const, id: result.id }] : ["Blogs"],
     }),
 
     createBlog: build.mutation<Blogs, CreateArticleSchema>({
@@ -51,6 +62,20 @@ export const BlogsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Blogs"],
     }),
+
+    updateBlogStatus: build.mutation<Blogs, { id: string; status: BlogStatus }>(
+      {
+        query: ({ id, status }) => ({
+          url: `${Endpoints.Blogs}/${id}/status`,
+          method: "PATCH",
+          body: { status },
+        }),
+        invalidatesTags: (result, error, { id }) => [
+          { type: "Blogs", id },
+          "Blogs",
+        ],
+      },
+    ),
   }),
   overrideExisting: false,
 });
@@ -58,8 +83,10 @@ export const BlogsApi = baseApi.injectEndpoints({
 export const {
   useFetchBlogsQuery,
   useFetchBlogByIdQuery,
+  useFetchBlogBySlugQuery,
   useUpdateBlogMutation,
   useLazyFetchBlogByIdQuery,
   useCreateBlogMutation,
   useDeleteBlogMutation,
+  useUpdateBlogStatusMutation,
 } = BlogsApi;

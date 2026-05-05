@@ -13,6 +13,8 @@ const InputText: React.FC<InputTextProps> = ({
   helperText,
   className = "",
   name,
+  onBlur,
+  onChange,
   ...props
 }) => {
   const { control, formState } = useFormContext();
@@ -22,7 +24,14 @@ const InputText: React.FC<InputTextProps> = ({
     <div className="flex flex-col">
       {label && (
         <label className="mb-1 text-sm font-medium text-gray-700">
-          {label}
+          {label.includes("*") ? (
+            <>
+              {label.replace(" *", "")}
+              <span className="text-red-500"> *</span>
+            </>
+          ) : (
+            label
+          )}
         </label>
       )}
 
@@ -32,17 +41,32 @@ const InputText: React.FC<InputTextProps> = ({
         render={({ field }) => (
           <>
             <input
-              {...field}
               {...props}
-              className={`h-11 w-full rounded-md border px-3 text-darkpurple placeholder:text-darkgrey focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              name={field.name}
+              ref={field.ref}
+              value={field.value ?? ""}
+              onChange={(event) => {
+                field.onChange(event);
+                onChange?.(event);
+              }}
+              onBlur={(event) => {
+                onBlur?.(event);
+                field.onBlur();
+              }}
+              className={`h-11 w-full rounded-md border px-3 text-darkpurple placeholder:text-darkgrey focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:opacity-100 ${
                 error ? "border-red-500" : "border-linegrey"
               } ${className}`}
             />
 
-            {/* Reserved space → no layout jump */}
-            <span className="mt-1 min-h-[1.25rem] text-xs text-red-500">
-              {error || helperText || ""}
-            </span>
+            {(error || helperText) && (
+              <span
+                className={`mt-1 text-xs ${
+                  error ? "text-red-500" : "text-gray-500"
+                }`}
+              >
+                {error || helperText}
+              </span>
+            )}
           </>
         )}
       />

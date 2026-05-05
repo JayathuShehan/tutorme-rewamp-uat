@@ -38,7 +38,14 @@ const InputMultiSelect: React.FC<MultiSelectProps> = ({
           htmlFor={name}
           className="block text-sm font-medium leading-6 text-gray-900"
         >
-          {label}
+          {label.includes("*") ? (
+            <>
+              {label.replace(" *", "")}
+              <span className="text-red-500"> *</span>
+            </>
+          ) : (
+            label
+          )}
         </label>
       )}
 
@@ -50,6 +57,7 @@ const InputMultiSelect: React.FC<MultiSelectProps> = ({
             {...field}
             isLoading={isLoading}
             isMulti
+            isSearchable={false}
             placeholder="Select an option"
             options={options}
             className={`basic-multi-select ${
@@ -64,8 +72,15 @@ const InputMultiSelect: React.FC<MultiSelectProps> = ({
             styles={{
               placeholder: (base) => ({
                 ...base,
-                color: "#000",
+                color: "#6B7280",
                 fontSize: "0.875rem",
+                marginLeft: "2px",
+              }),
+              input: (base) => ({
+                ...base,
+                margin: "0",
+                padding: "0",
+                caretColor: "transparent",
               }),
               control: (base) => ({
                 ...base,

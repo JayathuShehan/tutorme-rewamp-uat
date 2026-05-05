@@ -117,7 +117,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setLocalStorageItem(LocalStorageKey.USER_DATA, userData);
     setLocalStorageItem(LocalStorageKey.TOKENS, tokens);
-    setUser(user);
+    setUser(userData);
   };
 
   const logout = async () => {
@@ -135,8 +135,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     removeLocalStorageItem(LocalStorageKey.USER_DATA);
     removeLocalStorageItem(LocalStorageKey.TOKENS);
     localStorage.clear();
-    window.location.reload();
-    window.location.reload();
+    window.location.assign("/");
   };
 
   const updateUser = (userData: Partial<AuthUserData>) => {

@@ -1,23 +1,8 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
-  },
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.svg$/,
-      issuer: /\.[jt]sx?$/,
-      use: ["@svgr/webpack"],
-    });
-    return config;
-  },
+module.exports = {
+  // standalone output requires symlink support (Linux/Docker only).
+  // On Windows, set BUILD_STANDALONE=true only when building for Docker.
+  output: process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
   images: {
-    domains: ["i.ibb.co", "placeimg.com"],
-    //TODO: Please remove these in the future
     remotePatterns: [
       {
         protocol: "https",
@@ -26,6 +11,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "placeimg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.blob.core.windows.net",
       },
     ],
   },
@@ -36,16 +29,12 @@ const nextConfig = {
         has: [
           {
             type: "host",
-            value: "www.tuitionlanka.com",
+            value: "tuitionlanka.com",
           },
         ],
-        destination: "https://tuitionlanka.com/:path*",
+        destination: "https://www.tuitionlanka.com/:path*",
         permanent: true,
       },
     ];
   },
-
-  output: process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
 };
-
-module.exports = nextConfig;

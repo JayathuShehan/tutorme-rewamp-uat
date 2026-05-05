@@ -1,4 +1,13 @@
 import { z } from "zod";
+import {
+  FIND_TUTOR_GENDER_PREFERENCE_VALUES,
+  YES_NO_VALUES,
+} from "@/configs/options";
+
+const requiredOption = (values: readonly string[], message: string) =>
+  z.string().refine((value) => value !== "" && values.includes(value), {
+    message,
+  });
 
 export const tutorSchema = z.object({
   firstName: z.string().min(1, "First Name is required"),
@@ -7,19 +16,18 @@ export const tutorSchema = z.object({
   grade: z.string().min(1, "Grade is required"),
   phoneNumber: z
     .string()
-    .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+    .regex(/^\d{10}$/, "Contact Number must be exactly 10 digits"),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   region: z.string().min(1, "Region is required"),
   zip: z.string().regex(/^\d{5}$/, "Zip must be a valid 5-digit number"),
   tutorType: z.string().min(1, "Tutor type is required"),
   school: z.string().min(1, "School is required"),
-  genderPreference: z
-    .union([z.enum(["Male", "Female", "None"]), z.literal("")])
-    .refine((val) => val !== "", { message: "Gender Preference is required" }),
-  bilingualTutor: z
-    .union([z.enum(["Yes", "No"]), z.literal("")])
-    .refine((val) => val !== "", { message: "Bilingual Tutor is required" }),
+  genderPreference: requiredOption(
+    FIND_TUTOR_GENDER_PREFERENCE_VALUES,
+    "Gender Preference is required",
+  ),
+  bilingualTutor: requiredOption(YES_NO_VALUES, "Bilingual Tutor is required"),
   tutorCount: z.string().min(1, "Tutor count is required"),
   tutors: z
     .array(

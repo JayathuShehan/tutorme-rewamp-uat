@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap");
 /* TAILWIND CSS LINKS */
 @tailwind base;
 @tailwind components;
@@ -8,9 +9,291 @@
 @import "slick-carousel/slick/slick.css";
 @import "slick-carousel/slick/slick-theme.css";
 
+html {
+  --site-shell-offset: 72px;
+  --scroll-behavior: smooth !important;
+  scroll-behavior: smooth !important;
+  scroll-padding-top: var(--site-shell-offset);
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+@media (min-width: 640px) {
+  html {
+    --site-shell-offset: 72px;
+  }
+}
+
+@media (min-width: 768px) {
+  html {
+    --site-shell-offset: 80px;
+  }
+}
+
+/* 
+  Page 7: typography should support reading and understanding
+  Page 11: spacing influences reading flow and comprehension
+  Page 14: poor spacing / too-small text reduces comfort and trust
+*/
 body {
   margin: 0;
   font-family: "Urbanist", sans-serif;
+  font-size: 1rem;
+  /* 16px base */
+  line-height: 1.6;
+  font-weight: 400;
+  color: #111827;
+  background-color: #f9f9f9;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.site-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--site-shell-offset);
+}
+
+/* 
+  Page 11: size and weight create hierarchy
+  Page 13: clear headline hierarchy improves scanning
+*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Urbanist", sans-serif;
+  margin: 0;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+/* Hero Title — 48px, weight 800, line-height 1.1 */
+h1 {
+  font-size: 3rem;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+/* Section Title — 36px, weight 700, line-height 1.2 */
+h2 {
+  font-size: 2.25rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* Sub-Section Title — 30px, weight 700, line-height 1.25 */
+h3 {
+  font-size: 1.875rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+/* Card Title — 20px, weight 600, line-height 1.4 */
+h4 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  font-size: 1rem;
+  /* body text, Pages 12, 14 */
+  line-height: 1.625;
+  color: rgba(17, 24, 39, 0.82);
+}
+
+/* 
+  Page 12-13: balanced line lengths and generous spacing improve readability
+*/
+.reading-width {
+  max-width: 65ch;
+}
+
+/* 
+  Page 51-52: alignment should guide the eye and reduce cognitive load
+*/
+.text-balance {
+  text-wrap: balance;
+}
+
+/* 
+  Page 47 + 49: open, readable text on digital interfaces matters,
+  and small sizes need good clarity
+*/
+/* Helper Text — 12px, weight 400 */
+small,
+.helper-text {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #747474;
+}
+
+/* Form Labels — 14px, weight 500 */
+.ui-label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+/* Buttons — 16px, weight 600 */
+.ui-button-text {
+  font-size: 1rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Hero Title — clamp(3rem → 3.75rem), weight 800 (text-5xl → text-6xl range) */
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  margin: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .hero-title {
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+  }
+}
+
+@media (min-width: 1150px) {
+  .hero-title {
+    font-size: 3.75rem;
+  }
+}
+
+/* Hero badge can be calmer and more legible */
+.hero-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-size: 0.875rem;
+  /* small UI label size */
+  line-height: 1.25rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  letter-spacing: 0;
+  cursor: default;
+  transition: background 0.3s ease;
+}
+
+/* Blog content — spec: 16px body, 1.7 line-height, 36px titles */
+.blog-content h1 {
+  font-size: 2.25rem;
+  /* text-4xl = 36px — blog title */
+  line-height: 1.2;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.blog-content li.ql-align-justify,
+.blog-content-renderer li.ql-align-justify {
+  font-size: 1rem;
+  line-height: 1.625;
+  color: rgba(17, 24, 39, 0.82);
+  list-style: disc;
+  margin-left: 16px;
+}
+
+.blog-content p.ql-align-justify a,
+.blog-content p a,
+.blog-content-renderer p.ql-align-justify a,
+.blog-content-renderer p a {
+  color: #2563eb;
+}
+
+.blog-content h2 {
+  font-size: 1.875rem;
+  /* text-3xl = 30px */
+  line-height: 1.25;
+  font-weight: 700;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.blog-content h3 {
+  font-size: 1.25rem;
+  /* text-xl = 20px */
+  line-height: 1.4;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.blog-content p,
+.blog-content li {
+  font-size: 1rem;
+  /* text-base = 16px */
+  line-height: 1.7;
+  color: #374151;
+}
+
+.blog-content ul,
+.blog-content ol,
+.blog-content-renderer ul,
+.blog-content-renderer ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style-position: outside;
+}
+
+.blog-content ul,
+.blog-content-renderer ul {
+  list-style-type: disc;
+}
+
+.blog-content ol,
+.blog-content-renderer ol {
+  list-style-type: decimal;
+}
+
+.blog-content li,
+.blog-content-renderer li {
+  margin-bottom: 0.25rem;
+}
+
+.blog-content strong,
+.blog-content-renderer strong {
+  font-weight: 700;
+  color: #111827;
+}
+
+.blog-content a,
+.blog-content-renderer a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.blog-content a:hover,
+.blog-content-renderer a:hover {
+  text-decoration: underline;
+}
+
+.blog-content img,
+.blog-content-renderer img {
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
 }
 
 /* ============================================================
@@ -22,6 +305,7 @@ body {
     opacity: 0;
     transform: translateY(40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -32,6 +316,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -42,6 +327,7 @@ body {
     opacity: 0;
     transform: translateX(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -53,6 +339,7 @@ body {
     opacity: 0;
     transform: translateX(50px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -89,6 +376,13 @@ body {
     transform 0.7s ease;
 }
 
+@media (max-width: 767px) {
+  .animate-slide-left,
+  .animate-slide-right {
+    transform: translateY(40px);
+  }
+}
+
 /* When IntersectionObserver adds .is-visible */
 .animate-on-scroll.is-visible,
 .animate-fade-in.is-visible,
@@ -102,12 +396,15 @@ body {
 .stagger-1 {
   transition-delay: 0.1s;
 }
+
 .stagger-2 {
   transition-delay: 0.2s;
 }
+
 .stagger-3 {
   transition-delay: 0.35s;
 }
+
 .stagger-4 {
   transition-delay: 0.5s;
 }
@@ -118,19 +415,38 @@ body {
   transition: transform 0.1s linear;
 }
 
-html:not([data-scroll="0"]) .navbar {
+/* Navbar at the top of the page (over hero video) — transparent */
+.navbar {
   position: fixed;
   top: 0;
   width: 100%;
+  z-index: 50;
+  background-color: transparent;
+  border-bottom: none;
+  transition:
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+/* Navbar after scroll — solid background */
+html:not([data-scroll="0"]) .navbar {
   background-color: #f9f9f9 !important;
-  opacity: 1.9;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-  transition: 0.4s linear;
-  padding: 0px !important;
-  z-index: 3;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-bottom: 0.5px solid rgba(196, 196, 196, 0.75);
+}
+
+/* Navbar on pages with no hero section — always solid regardless of scroll */
+html[data-hero="0"] .navbar {
+  background-color: #f9f9f9 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-bottom: 0.5px solid rgba(196, 196, 196, 0.75);
 }
 
 html:not([data-scroll="0"]) .navbar > div > div {
+  height: 3rem;
+}
+
+html[data-hero="0"] .navbar > div > div {
   height: 3rem;
 }
 
@@ -138,13 +454,166 @@ html:not([data-scroll="0"]) .border-right {
   height: 4rem;
 }
 
-html {
-  --scroll-behavior: smooth !important;
-  scroll-behavior: smooth !important;
+/* ============================================================
+   HERO SECTION — fullscreen video banner
+   ============================================================ */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: calc(var(--site-shell-offset) * -1);
 }
 
-.navbar {
-  border-bottom: 0.5px solid rgba(196, 196, 196, 0.75);
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 900px;
+  width: 100%;
+}
+
+.hero-badge:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hero-cta,
+.hero-cta-secondary,
+.hero-cta-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.875rem 2.25rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-cta {
+  background: #2563eb;
+  color: #ffffff;
+  border: 1.5px solid #2563eb;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+.hero-cta:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+}
+
+.hero-cta-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+}
+
+.hero-cta-secondary:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #2563eb;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+.hero-cta-whatsapp {
+  background: #ffffff;
+  color: #25d366;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
+.hero-cta-whatsapp:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+}
+
+/* Scroll-down arrow */
+.hero-scroll-arrow {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+  animation: hero-bounce 2s ease-in-out infinite;
+}
+
+.hero-scroll-arrow:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%) translateY(-4px);
+  cursor: pointer;
+}
+
+.hero-scroll-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  stroke-width: 2.5;
+}
+
+@keyframes hero-bounce {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
 }
 
 .hover-underline {
@@ -319,6 +788,12 @@ html {
   }
 }
 
+@media only screen and (max-width: 768px) {
+  .bg-testimonial {
+    background-image: none;
+  }
+}
+
 .manageTabs {
   border: 1px solid #dbdbdb;
   box-shadow: 0px 4px 5px 1px rgba(193, 193, 193, 0.35);
@@ -357,11 +832,17 @@ html {
     12% 18%;
 }
 
+@media only screen and (max-width: 1160px) {
+  .bg-joinus {
+    background-image: none;
+  }
+}
+
 .footer-icons {
   box-shadow: 0px 19px 28px rgba(0, 0, 0, 0.1);
   background-color: rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  padding: 15px 20px;
+  padding: 10px 15px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -523,6 +1004,7 @@ html {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -550,6 +1032,7 @@ html {
     --chart-5: 340 75% 55%;
   }
 }
+
 .ql-toolbar {
   border: none !important;
   border-radius: 0.5rem 0.5rem 0 0;
@@ -565,41 +1048,14 @@ html {
 .ql-editor {
   padding: 1rem;
 }
+
 .ql-editor.ql-blank::before {
   font-family: "Urbanist", sans-serif;
   font-style: initial;
   font-size: 14px;
   color: #747474;
 }
-.blog-content h1 {
-  @apply text-4xl font-bold mt-8 mb-4 text-gray-900;
-}
-
-.blog-content h2 {
-  @apply text-3xl font-semibold mt-6 mb-3 text-gray-800;
-}
-
-.blog-content h3 {
-  @apply text-2xl font-semibold mt-4 mb-2 text-gray-700;
-}
 
 .blog-content p {
   @apply text-gray-700 leading-relaxed mb-4;
-}
-
-.blog-content ul,
-.blog-content ol {
-  @apply list-disc list-inside mb-4 pl-6 text-gray-700;
-}
-
-.blog-content strong {
-  @apply font-semibold text-gray-900;
-}
-
-.blog-content a {
-  @apply text-blue-600 hover:underline;
-}
-
-.blog-content img {
-  @apply rounded-lg my-6;
 }

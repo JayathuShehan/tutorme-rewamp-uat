@@ -31,18 +31,23 @@ const FormLogin = ({ onRegisterClick, onForgotPasswordClick }: Props) => {
 
   useEffect(() => {
     if (isAuthError) {
-      toast.error("Invalid credentials. Email or password wrong.");
+      toast.error("Invalid credentials. Email or password wrong.", {
+        id: "login-error",
+        duration: 3000,
+      });
     }
   }, [isAuthError]);
 
   const onSubmit = (data: LoginSchema) => {
+    toast.dismiss("login-error");
+    setIsAuthError(null);
     login(data);
   };
 
   return (
     <FormProvider {...loginForm}>
       <form onSubmit={loginForm.handleSubmit(onSubmit)}>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <InputText
             label="Email"
             name="email"
@@ -64,7 +69,7 @@ const FormLogin = ({ onRegisterClick, onForgotPasswordClick }: Props) => {
             Forgot password?
           </p>
         </div>
-        <div className="space-y-2 mt-8">
+        <div className="space-y-2 mt-4">
           <SubmitButton title="Login" type="submit" loading={isLoading} />
 
           <div className="text-center">

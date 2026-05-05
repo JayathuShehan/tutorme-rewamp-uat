@@ -1,99 +1,48 @@
 /* eslint-disable unused-imports/no-unused-vars */
 
 import { Option } from "@/types/shared-types";
+import { AuthUserData } from "@/types/auth-types";
+import { ProfileResponse } from "@/types/response-types";
+import { EducationInfoSchema } from "../components/form-education-information/schema";
 import { GeneralInfoSchema } from "../components/form-general-information/schema";
 import { LanguageOptionsSchema } from "../components/form-language-time/schema";
+import { TeachingProfileSchema } from "../components/form-teaching-profile/schema";
 
 export type LogicReturnType = {
   derivedData: {
     dropdownOptionData: {
       gradesOptions: Option[];
-      subjectsOptions: Option[];
-      durationOptions: Option[];
-      frequencyOptions: Option[];
-      tutorTypesOptions: Option[];
-      genderOptions: Option[];
-      countryOptions: Option[];
+      educationSubjectsOptions: Option[];
       languageOptions: Option[];
       timeZoneOptions: Option[];
+      rateOptions: Option[];
     };
     loading: {
       isProfileDataLoading: boolean;
       isGradeLoading: boolean;
       isGeneralFormSubmitting: boolean;
     };
+    profileData: ProfileResponse | null;
+    currentUser: AuthUserData | null;
+    isAdminProfile: boolean;
   };
   forms: {
     generalInfoForm: ReturnType<any>;
+    educationInfoForm: ReturnType<any>;
     languageAndTimeForm: ReturnType<any>;
+    teachingProfileForm: ReturnType<any>;
   };
   handlers: {
     onGeneralInfoFormSubmission: (data: GeneralInfoSchema) => void;
+    onEducationInfoFormSubmission: (data: EducationInfoSchema) => void;
     onLanguageAndTimeFormSubmission: (data: LanguageOptionsSchema) => void;
+    onTeachingProfileFormSubmission: (data: TeachingProfileSchema) => void;
   };
 };
 
-export const durationOptions = [
-  { value: "30 minutes", label: "30 minutes" },
-  { value: "1 hour", label: "1 hour" },
-  { value: "2 hours", label: "2 hours" },
-];
-
-export const frequencyOptions = [
-  { value: "Once a week", label: "Once a week" },
-  { value: "Twice a week", label: "Twice a week" },
-  { value: "Daily", label: "Daily" },
-];
-
-export const tutorTypesOptions = [
-  { label: "Part Time Tutors", value: "part-time" },
-  { label: "Full Time Tutors", value: "full-time" },
-  {
-    label: "Ex / Current Government School Tutors",
-    value: "gov",
-  },
-];
-
-export const genderOptions = [
-  { label: "Male", value: "Male" },
-  { label: "Female", value: "Female" },
-  { label: "Others", value: "None" },
-];
-
-export const countryOptions: Option[] = [
-  { label: "United States", value: "US" },
-  { label: "Canada", value: "CA" },
-  { label: "United Kingdom", value: "GB" },
-  { label: "Australia", value: "AU" },
-  { label: "Germany", value: "DE" },
-  { label: "France", value: "FR" },
-  { label: "India", value: "IN" },
-  { label: "Brazil", value: "BR" },
-  { label: "South Africa", value: "ZA" },
-  { label: "Mexico", value: "MX" },
-  { label: "Italy", value: "IT" },
-  { label: "Spain", value: "ES" },
-  { label: "Russia", value: "RU" },
-  { label: "South Korea", value: "KR" },
-  { label: "New Zealand", value: "NZ" },
-  { label: "Netherlands", value: "NL" },
-  { label: "Sweden", value: "SE" },
-  { label: "Norway", value: "NO" },
-  { label: "Japan", value: "JP" },
-  { label: "China", value: "CN" },
-  { label: "Sri Lanka", value: "SL" },
-];
-
-export const languageOptions = [
-  { value: "en", label: "English" },
-  { value: "sp", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "sn", label: "Sinhala" },
-];
-
-export const timeZoneOptions = [
-  { value: "UTC-5", label: "Eastern Time (US & Canada)" },
-  { value: "UTC+1", label: "Central European Time" },
-  { value: "UTC+9", label: "Japan Standard Time" },
-  { value: "UTC+5:30", label: "Sri Lanka Standard Time" },
-];
+export {
+  PROFILE_COUNTRY_OPTIONS as countryOptions,
+  PROFILE_LANGUAGE_OPTIONS as languageOptions,
+  PROFILE_RATE_OPTIONS as rateOptions,
+  PROFILE_TIME_ZONE_OPTIONS as timeZoneOptions,
+} from "@/configs/options";

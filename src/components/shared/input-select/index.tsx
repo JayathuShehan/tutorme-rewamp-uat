@@ -12,7 +12,8 @@ interface InputSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   helperText?: string;
   options: Option[];
   name: string;
-  loading?: boolean; // New prop for loading state
+  loading?: boolean;
+  placeholder?: string;
 }
 
 const InputSelect: FC<InputSelectProps> = ({
@@ -22,6 +23,7 @@ const InputSelect: FC<InputSelectProps> = ({
   name,
   className = "",
   loading = false,
+  placeholder = "Select an option",
   ...props
 }) => {
   const { control, formState } = useFormContext();
@@ -31,7 +33,16 @@ const InputSelect: FC<InputSelectProps> = ({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-gray-700">
+          {label.includes("*") ? (
+            <>
+              {label.replace(" *", "")}
+              <span className="text-red-500"> *</span>
+            </>
+          ) : (
+            label
+          )}
+        </label>
       )}
 
       <Controller
@@ -47,8 +58,8 @@ const InputSelect: FC<InputSelectProps> = ({
               disabled={loading}
               {...props}
             >
-              <option value="" className="text-gray-500">
-                Select an option
+              <option value="" disabled className="text-gray-500">
+                {placeholder}
               </option>
               {options.map((option, index) => (
                 <option key={index} value={option.value}>

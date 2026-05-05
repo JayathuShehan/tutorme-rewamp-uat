@@ -8,9 +8,10 @@ import toast from "react-hot-toast";
 
 type Props = {
   onLoginClick: () => void;
+  onSuccess: () => void;
 };
 
-const FormForgotPassword = ({ onLoginClick }: Props) => {
+const FormForgotPassword = ({ onLoginClick, onSuccess }: Props) => {
   const { forgotPassword, isAuthError, setIsAuthError, isLoading } =
     useAuthContext();
 
@@ -24,11 +25,10 @@ const FormForgotPassword = ({ onLoginClick }: Props) => {
     setIsAuthError("");
 
     try {
-      const response = await forgotPassword(data);
-
-      if (response.success) {
-        toast.success(response.message);
-      }
+      await forgotPassword(data);
+      toast.success("Password reset link sent to your email.");
+      forgotPasswordForm.reset();
+      onSuccess();
     } catch (error: any) {
       const errorMessage =
         error?.message || "Something went wrong. Please try again.";
@@ -39,7 +39,7 @@ const FormForgotPassword = ({ onLoginClick }: Props) => {
   return (
     <FormProvider {...forgotPasswordForm}>
       <form onSubmit={forgotPasswordForm.handleSubmit(onSubmit)}>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <InputText
             label="Email"
             name="email"
@@ -47,11 +47,12 @@ const FormForgotPassword = ({ onLoginClick }: Props) => {
             type="email"
           />
         </div>
+
         {isAuthError && (
-          <p className="text-red-500 text-sm mt-3 text-center">{isAuthError}</p>
+          <p className="text-red-500 text-xs mt-3 text-center">{isAuthError}</p>
         )}
 
-        <div className="space-y-2 mt-8">
+        <div className="space-y-2 mt-4">
           <SubmitButton
             title={isLoading ? "Sending..." : "Send Verification Link"}
             type="submit"

@@ -8,6 +8,7 @@ import LogoImage from "../../../../public/images/findTutor/register.png";
 import Image from "next/image";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 import {
   Card,
   CardContent,
@@ -31,13 +32,17 @@ import TermsAndSubmit from "./TermsAndSubmit";
 import {
   FindMyTutorForm,
   fullSchema,
-  step1Schema,
   step2Schema,
   step3Schema,
 } from "../schema";
-import { useAddTutorRequestMutation } from "@/store/api/splits/tutor-request";
+import {
+  useAddTutorRequestMutation,
+  useLazyGetTutorEmailAvailabilityQuery,
+} from "@/store/api/splits/tutor-request";
 import { getErrorInApiResult } from "@/utils/api";
 import { Spinner } from "@/components/ui/spinner";
+import { getEmailFormatError } from "@/utils/email-validation";
+import { isPhysicalClassType } from "@/configs/register-tutor";
 
 type TabKey =
   | "personalInfo"
@@ -51,11 +56,25 @@ const TAB_ORDER: TabKey[] = [
   "teachingProfile",
   "verification",
 ];
+const primaryActionButtonClassName = "bg-blue-600 text-white hover:bg-blue-700";
+const DUPLICATE_EMAIL_MESSAGE = "Email already exists";
+const ONLINE_ONLY_LOCATION_FALLBACK = "No Preference";
+
+const isDuplicateEmailError = (error: string) => {
+  const normalizedError = error.toLowerCase();
+  return (
+    normalizedError.includes("email") &&
+    (normalizedError.includes("already exists") ||
+      normalizedError.includes("already in use") ||
+      normalizedError.includes("already taken"))
+  );
+};
 
 export function TutorTabs() {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("personalInfo");
   const [addTutorRequest, { isLoading }] = useAddTutorRequestMutation();
+  const [checkTutorEmailAvailability] = useLazyGetTutorEmailAvailabilityQuery();
   /** null = closed | "success" = success dialog | string = error message */
   const [submissionResult, setSubmissionResult] = useState<
     "success" | string | null
@@ -67,6 +86,8 @@ export function TutorTabs() {
     defaultValues: {
       fullName: "",
       email: "",
+      password: "",
+      confirmPassword: "",
       contactNumber: "",
       dateOfBirth: "",
       age: 0,
@@ -74,7 +95,7 @@ export function TutorTabs() {
       nationality: "",
       race: "",
 
-      tutoringLevels: [],
+      classType: [],
       preferredLocations: [],
       tutorType: [],
       tutorMediums: [],
@@ -88,39 +109,118 @@ export function TutorTabs() {
       sellingPoints: "",
       academicDetails: "",
 
-      certificatesAndQualifications: [],
+      certificatesAndQualifications: [{ type: "", url: "" }],
       agreeTerms: false,
       agreeAssignmentInfo: false,
     },
   });
 
-  const { handleSubmit, trigger, reset } = methods;
+  const { handleSubmit, trigger, reset, setError, setFocus, getValues } =
+    methods;
 
   const currentIndex = TAB_ORDER.indexOf(tab);
 
-  const nextStep = async () => {
-    let schema;
-    if (tab === "personalInfo") schema = step1Schema;
-    if (tab === "qualifications") schema = step2Schema;
-    if (tab === "teachingProfile") schema = step3Schema;
+  const changeStep = (nextTab: TabKey) => {
+    setTab(nextTab);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-    if (schema) {
-      const valid = await trigger(Object.keys(schema.shape) as any);
+  const nextStep = async () => {
+    let fieldsToValidate: string[] | undefined;
+
+    if (tab === "personalInfo") {
+      // step1Schema uses .superRefine, so we list fields explicitly
+      fieldsToValidate = [
+        "fullName",
+        "email",
+        "password",
+        "confirmPassword",
+        "contactNumber",
+        "dateOfBirth",
+        "gender",
+        "age",
+        "nationality",
+        "race",
+      ];
+    } else if (tab === "qualifications") {
+      fieldsToValidate = Object.keys(step2Schema.shape);
+    } else if (tab === "teachingProfile") {
+      fieldsToValidate = Object.keys(step3Schema.shape);
+    }
+
+    if (fieldsToValidate) {
+      const valid = await trigger(fieldsToValidate as any);
       if (!valid) return;
     }
 
-    setTab(TAB_ORDER[currentIndex + 1]);
+    if (tab === "personalInfo") {
+      const email = getValues("email").toLowerCase();
+      const formatError = getEmailFormatError(email);
+      if (formatError) {
+        setError("email", {
+          type: "manual",
+          message: formatError,
+        });
+        setFocus("email");
+        return;
+      }
+
+      const result = await checkTutorEmailAvailability(email, true);
+
+      if (result.data && !result.data.available) {
+        setError("email", {
+          type: "server",
+          message: result.data.message || DUPLICATE_EMAIL_MESSAGE,
+        });
+        setFocus("email");
+        return;
+      }
+    }
+
+    changeStep(TAB_ORDER[currentIndex + 1]);
   };
 
   const prevStep = () => {
-    setTab(TAB_ORDER[currentIndex - 1]);
+    changeStep(TAB_ORDER[currentIndex - 1]);
   };
 
   const onSubmit = async (data: FindMyTutorForm) => {
     try {
-      const result = await addTutorRequest(data);
+      // Strip confirmPassword — it is front-end only and must not reach the API
+      const { confirmPassword: _omit, ...payload } = data;
+      const normalizedPayload = {
+        ...payload,
+        preferredLocations: payload.classType.some(isPhysicalClassType)
+          ? payload.preferredLocations
+          : payload.preferredLocations.length > 0
+            ? payload.preferredLocations
+            : [ONLINE_ONLY_LOCATION_FALLBACK],
+      };
+      const result = await addTutorRequest(normalizedPayload);
       const error = getErrorInApiResult(result);
       if (error) {
+        if (typeof error === "string" && isDuplicateEmailError(error)) {
+          setError("email", {
+            type: "server",
+            message: DUPLICATE_EMAIL_MESSAGE,
+          });
+          changeStep("personalInfo");
+          setTimeout(() => setFocus("email"), 0);
+          toast.error(DUPLICATE_EMAIL_MESSAGE);
+          return;
+        }
+
+        // Show a prominent toast for suspended emails, generic dialog for anything else
+        if (
+          typeof error === "string" &&
+          error.toLowerCase().includes("suspended")
+        ) {
+          toast.error(
+            "Your email has been suspended. Please contact admin to resolve this.",
+            { duration: 8000, style: { maxWidth: 420 } },
+          );
+          return;
+        }
         setSubmissionResult(error);
         return;
       }
@@ -139,28 +239,44 @@ export function TutorTabs() {
   };
 
   const certificates = methods.watch("certificatesAndQualifications");
-  const isSubmitDisabled = !certificates || certificates.length === 0;
+  const agreeTerms = methods.watch("agreeTerms");
+  const agreeAssignmentInfo = methods.watch("agreeAssignmentInfo");
+  const isSubmitDisabled =
+    isLoading ||
+    !certificates ||
+    certificates.length === 0 ||
+    !certificates.some((c: { type: string; url: string }) => c.type && c.url) ||
+    !agreeTerms ||
+    !agreeAssignmentInfo;
 
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mx-auto max-w-7xl my-10 px-6 lg:px-8">
-          <div className="text-2xl flex flex-row gap-2 items-center px-6 font-bold mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl">
+          <div className="text-3xl flex flex-row gap-2 items-center px-6 font-bold mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl">
             <Image height={50} width={50} src={LogoImage} alt="Logo image" />
-            <h1>Register As A Tutor</h1>
+            <h1 className="text-3xl text-white font-bold">
+              Register As A Tutor
+            </h1>
           </div>
 
           <Tabs value={tab} className="w-full">
             <TabsContent value="personalInfo">
               <Card>
                 <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
+                  <CardTitle className="text-base font-medium">
+                    Personal Information
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <PersonalInfo />
                 </CardContent>
                 <CardFooter className="flex justify-end">
-                  <Button type="button" onClick={nextStep}>
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className={primaryActionButtonClassName}
+                  >
                     Next
                   </Button>
                 </CardFooter>
@@ -170,7 +286,9 @@ export function TutorTabs() {
             <TabsContent value="qualifications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Qualifications</CardTitle>
+                  <CardTitle className="text-base font-medium">
+                    Qualifications
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <AcademicExperience />
@@ -179,7 +297,11 @@ export function TutorTabs() {
                   <Button type="button" variant="outline" onClick={prevStep}>
                     Previous
                   </Button>
-                  <Button type="button" onClick={nextStep}>
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className={primaryActionButtonClassName}
+                  >
                     Next
                   </Button>
                 </CardFooter>
@@ -189,7 +311,9 @@ export function TutorTabs() {
             <TabsContent value="teachingProfile">
               <Card>
                 <CardHeader>
-                  <CardTitle>Teaching Profile</CardTitle>
+                  <CardTitle className="text-base font-medium">
+                    Teaching Profile
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <TutorProfile />
@@ -198,7 +322,11 @@ export function TutorTabs() {
                   <Button type="button" variant="outline" onClick={prevStep}>
                     Previous
                   </Button>
-                  <Button type="button" onClick={nextStep}>
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className={primaryActionButtonClassName}
+                  >
                     Next
                   </Button>
                 </CardFooter>
@@ -208,7 +336,9 @@ export function TutorTabs() {
             <TabsContent value="verification">
               <Card>
                 <CardHeader>
-                  <CardTitle>Verification & Agreement</CardTitle>
+                  <CardTitle className="text-base font-medium">
+                    Verification & Agreement
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <TermsAndSubmit />
@@ -219,8 +349,8 @@ export function TutorTabs() {
                   </Button>
                   <Button
                     type="submit"
-                    className="ml-auto"
-                    disabled={isLoading || isSubmitDisabled}
+                    className={`ml-auto ${primaryActionButtonClassName}`}
+                    disabled={isSubmitDisabled}
                   >
                     Submit {isLoading ? <Spinner /> : ""}
                   </Button>
@@ -257,10 +387,10 @@ export function TutorTabs() {
             </div>
           </div>
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
+            <DialogTitle className="text-center text-xl font-semibold">
               Registration Submitted!
             </DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogDescription className="text-center text-base">
               Your tutor profile has been submitted successfully. Our team will
               review it and get back to you shortly.
             </DialogDescription>
@@ -301,11 +431,13 @@ export function TutorTabs() {
             </div>
           </div>
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
+            <DialogTitle className="text-center text-xl font-semibold">
               Submission Failed
             </DialogTitle>
-            <DialogDescription className="text-center">
-              Something went wrong.
+            <DialogDescription className="text-center text-base">
+              {typeof submissionResult === "string"
+                ? submissionResult
+                : "Something went wrong."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="justify-center mt-2">

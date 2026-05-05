@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuthContext } from "@/contexts";
 import { Disclosure } from "@headlessui/react";
 import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import Modal from "../modal";
 import Drawer from "./drawer-component";
 import DrawerContent from "./drawer-content";
@@ -19,31 +20,69 @@ interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { name: "Request a Tutor", href: "/request-for-tutors" },
-  { name: "Register a Tutor", href: "/register-tutor" },
+  { name: "Request for Tutor", href: "/request-for-tutors" },
+  { name: "Register as a Tutor", href: "/register-tutor" },
   {
     name: "Academics",
     href: "/",
     dropdown: [
-      { name: "Grades", href: "/grades" },
-      { name: "Subjects", href: "/subjects" },
-      { name: "Test Papers", href: "/test-papers" },
+      { name: "Grades & Subjects", href: "/grades-and-subjects" },
+      { name: "Past Exam Papers", href: "/past-exam-papers" },
     ],
   },
   { name: "Tuition Rates", href: "/tuition-rates" },
-  { name: "FAQ", href: "/#faq-section" },
+  { name: "FAQ", href: "/faq" },
   { name: "Blog", href: "/blogs" },
-  { name: "Contact Us", href: "/#keep-in-touch-section" },
+  { name: "Contact Us", href: "/contact-us" },
 ];
 
-const Navbar = () => {
+interface NavbarProps {
+  isHeroTop?: boolean;
+}
+
+const NAVBAR_OFFSET = 110;
+
+const Navbar = ({ isHeroTop = false }: NavbarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  /** The id of the anchor section currently in view on the home page, e.g. "faq-section" */
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
-  // Close dropdown when clicking outside
+  const scrollToSection = useCallback((sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+
+    const top = el.getBoundingClientRect().top + window.scrollY - NAVBAR_OFFSET;
+
+    window.scrollTo({
+      top,
+      behavior: "smooth",
+    });
+  }, []);
+
+  const handleAnchorNavigation = useCallback(
+    (href: string) => {
+      const sectionId = href.replace("/#", "");
+
+      setOpenDropdown(null);
+
+      if (pathname === "/") {
+        requestAnimationFrame(() => {
+          setTimeout(() => scrollToSection(sectionId), 50);
+        });
+        return;
+      }
+
+      router.push(`/#${sectionId}`);
+
+      setTimeout(() => {
+        scrollToSection(sectionId);
+      }, 250);
+    },
+    [pathname, router, scrollToSection],
+  );
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -57,7 +96,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Close dropdown on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpenDropdown(null);
@@ -66,10 +104,6 @@ const Navbar = () => {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  /**
-   * IntersectionObserver: watch anchor sections on the home page.
-   * Fires only when pathname === "/" so we don't attach it on other pages.
-   */
   useEffect(() => {
     if (pathname !== "/") {
       setActiveSection(null);
@@ -88,11 +122,13 @@ const Navbar = () => {
           if (entry.isIntersecting) {
             setActiveSection(id);
           } else {
-            // Clear only if this section was the active one
             setActiveSection((prev) => (prev === id ? null : prev));
           }
         },
-        { threshold: 0.3 }, // section must be ≥ 30% visible
+        {
+          threshold: 0.3,
+          rootMargin: `-${NAVBAR_OFFSET}px 0px 0px 0px`,
+        },
       );
 
       obs.observe(el);
@@ -101,6 +137,22 @@ const Navbar = () => {
 
     return () => observers.forEach((obs) => obs.disconnect());
   }, [pathname]);
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const sectionId = hash.replace("#", "");
+
+    const timer = setTimeout(() => {
+      scrollToSection(sectionId);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [pathname, scrollToSection]);
 
   const toggleDropdown = (name: string) => {
     setOpenDropdown(openDropdown === name ? null : name);
@@ -119,35 +171,54 @@ const Navbar = () => {
 
   const { user, isUserLoaded, logout } = useAuthContext();
 
-  /** True when the given nav item should be considered "active" */
   const isActive = (item: NavigationItem): boolean => {
     if (item.dropdown) {
       return item.dropdown.some((sub) => pathname.startsWith(sub.href));
     }
+
     if (item.href === "/") return pathname === "/";
-    // Anchor links: active only when the corresponding section is in the viewport
+
     if (item.href.startsWith("/#")) {
       if (pathname !== "/") return false;
-      const sectionId = item.href.slice(2); // "/#faq-section" → "faq-section"
+      const sectionId = item.href.slice(2);
       return activeSection === sectionId;
     }
+
     return pathname.startsWith(item.href);
   };
+
+  const heroLinkColor = isHeroTop ? "rgba(255,255,255,0.92)" : "";
+  const heroBtnBorder = isHeroTop
+    ? "1px solid rgba(255,255,255,0.5)"
+    : undefined;
+  const heroBtnColor = isHeroTop ? "rgba(255,255,255,0.92)" : undefined;
+  const heroHamburger = isHeroTop ? "#ffffff" : "";
+  const logoSrc = isHeroTop
+    ? "/images/logo/DarkThemeLogoFull.svg"
+    : "/images/logo/LightThemeLogoFull.svg";
 
   return (
     <Disclosure as="nav" className="navbar">
       <div className="mx-auto max-w-7xl p-3 md:p-4">
         <div className="relative flex h-12 sm:h-20 items-center">
           <div className="flex flex-1 items-center sm:justify-between">
-            {/* ── Logo ── */}
-            <div className="flex flex-shrink-0 items-start">
-              <Link href="/" className="text-xl sm:text-4xl flex font-semibold">
-                <div className="text-black font-bold">Tuition</div>
-                <div className="text-blue-600 font-bold"> Lanka</div>
+            <div className="flex flex-shrink-0 items-center">
+              <Link
+                href="/"
+                className="relative block h-12 w-[180px] sm:h-14 sm:w-[220px] lg:h-16 lg:w-[250px]"
+                aria-label="Tuition Lanka home"
+              >
+                <Image
+                  src={logoSrc}
+                  alt="Tuition Lanka"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 250px, (min-width: 640px) 220px, 180px"
+                  className="object-contain"
+                />
               </Link>
             </div>
 
-            {/* ── Desktop nav links ── */}
             <div className="hidden lg:flex items-center">
               <div
                 ref={dropdownRef}
@@ -162,6 +233,11 @@ const Navbar = () => {
                         onClick={() => toggleDropdown(item.name)}
                         aria-expanded={openDropdown === item.name}
                         aria-haspopup="true"
+                        style={
+                          !active && isHeroTop
+                            ? { color: heroLinkColor }
+                            : undefined
+                        }
                         className={[
                           "group px-3 py-2 rounded-md text-base font-medium flex items-center gap-1 transition-colors duration-150",
                           active
@@ -176,13 +252,11 @@ const Navbar = () => {
                             openDropdown === item.name ? "rotate-180" : "",
                           ].join(" ")}
                         />
-                        {/* active underline indicator */}
                         {active && (
                           <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-blue-600 rounded-full" />
                         )}
                       </button>
 
-                      {/* ── Dropdown panel ── */}
                       <div
                         className={[
                           "absolute top-full left-0 mt-2 w-52 origin-top-left rounded-xl bg-white shadow-xl ring-1 ring-black/5 z-50",
@@ -201,8 +275,8 @@ const Navbar = () => {
                                 href={subItem.href}
                                 onClick={() => setOpenDropdown(null)}
                                 className={[
-                                  "flex items-center gap-2 px-4 py-2.5 text-sm transition-colors duration-100",
-                                  idx !== 0 ? "border-t border-gray-50" : "",
+                                  "flex items-center gap-2 px-4 py-2.5 mx-1.5 rounded-lg text-base transition-colors duration-100",
+                                  idx !== 0 ? "" : "",
                                   subActive
                                     ? "text-blue-600 font-semibold bg-blue-50"
                                     : "text-gray-700 hover:bg-gray-50 hover:text-blue-600",
@@ -218,10 +292,44 @@ const Navbar = () => {
                         </div>
                       </div>
                     </div>
+                  ) : item.href.startsWith("/#") ? (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAnchorNavigation(item.href);
+                      }}
+                      style={
+                        !active && isHeroTop
+                          ? { color: heroLinkColor }
+                          : undefined
+                      }
+                      className={[
+                        "relative px-3 py-2 rounded-md text-base font-medium transition-colors duration-150 cursor-pointer",
+                        active
+                          ? "text-blue-600 font-semibold"
+                          : "navlinks hover:text-blue-600",
+                      ].join(" ")}
+                    >
+                      {item.name}
+                      <span
+                        className={[
+                          "absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-blue-600 transition-transform duration-200 origin-left",
+                          active ? "scale-x-100" : "scale-x-0",
+                        ].join(" ")}
+                      />
+                    </a>
                   ) : (
                     <Link
                       key={item.name}
                       href={item.href}
+                      onClick={() => setOpenDropdown(null)}
+                      style={
+                        !active && isHeroTop
+                          ? { color: heroLinkColor }
+                          : undefined
+                      }
                       className={[
                         "relative px-3 py-2 rounded-md text-base font-medium transition-colors duration-150",
                         active
@@ -230,7 +338,6 @@ const Navbar = () => {
                       ].join(" ")}
                     >
                       {item.name}
-                      {/* animated underline for active link */}
                       <span
                         className={[
                           "absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-blue-600 transition-transform duration-200 origin-left",
@@ -243,7 +350,6 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* ── Login / Profile ── */}
             <div className="inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:pr-0">
               <div className="hidden lg:block">
                 {user?.email ? (
@@ -253,7 +359,12 @@ const Navbar = () => {
                 ) : (
                   <button
                     type="button"
-                    className="justify-end text-xl font-semibold bg-transparent py-4 px-6 lg:px-12 navbutton rounded-full hover:bg-blue-600 hover:text-white transition-colors duration-200"
+                    style={
+                      isHeroTop
+                        ? { border: heroBtnBorder, color: heroBtnColor }
+                        : undefined
+                    }
+                    className="text-base font-medium text-white py-2 px-5 bg-primary-800 rounded-full hover:bg-primary-800 transition-colors duration-200"
                     onClick={handleOnChangeSignUpModalVisibility}
                   >
                     Login
@@ -263,13 +374,13 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* ── Mobile hamburger ── */}
           <div className="flex items-center gap-3 lg:hidden">
             {user?.email ? (
               <ProfileDropdown isLoading={!isUserLoaded} user={user} />
             ) : null}
             <Bars3Icon
-              className="block h-6 w-6"
+              className="block h-6 w-6 transition-colors duration-300"
+              style={{ color: heroHamburger || undefined }}
               aria-hidden="true"
               onClick={handleOnChangeDrawerVisibility}
             />

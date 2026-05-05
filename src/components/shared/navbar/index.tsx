@@ -1,42 +1,44 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Header from "./header";
 
 const NavBar: React.FC = () => {
+  /** True only when hero page is loaded and scroll position is at the very top */
+  const [isHeroTop, setIsHeroTop] = useState(false);
+  const pathname = usePathname();
+
   useEffect(() => {
-    // The debounce function receives our function as a parameter
     const debounce = (fn: Function) => {
-      // This holds the requestAnimationFrame reference, so we can cancel it if we wish
       let frame: number;
-      // The debounce function returns a new function that can receive a variable number of arguments
       return (...params: any[]) => {
-        // If the frame variable has been defined, clear it now, and queue for next frame
-        if (frame) {
-          cancelAnimationFrame(frame);
-        }
-        // Queue our function call for the next frame
-        frame = requestAnimationFrame(() => {
-          // Call our function and pass any params we received
-          fn(...params);
-        });
+        if (frame) cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => fn(...params));
       };
     };
 
-    // Reads out the scroll position and stores it in the data attribute
-    // so we can use it in our stylesheets
-    const storeScroll = () => {
+    const update = () => {
+      const heroEl = document.getElementById("hero-section");
+      const atTop = window.scrollY === 0;
+      const heroVisible = !!heroEl && atTop;
+      setIsHeroTop(heroVisible);
+
+      // data-hero lets CSS know whether a hero is present (for solid navbar on non-hero pages)
+      document.documentElement.dataset.hero = heroEl ? "1" : "0";
+      // Keep the data-scroll attribute for the navbar background-color CSS transition
       document.documentElement.dataset.scroll = window.scrollY.toString();
     };
 
-    // Listen for new scroll events, here we debounce our `storeScroll` function
-    document.addEventListener("scroll", debounce(storeScroll), {
-      passive: true,
-    });
+    const debouncedUpdate = debounce(update);
 
-    // Update scroll position for first time
-    storeScroll();
-  }, []);
-  return <Header />;
+    document.addEventListener("scroll", debouncedUpdate, { passive: true });
+    // Re-run on every route change (hero may appear/disappear after navigation)
+    update();
+
+    return () => document.removeEventListener("scroll", debouncedUpdate);
+  }, [pathname]); // re-run whenever the route changes
+
+  return <Header isHeroTop={isHeroTop} />;
 };
 
 export default NavBar;

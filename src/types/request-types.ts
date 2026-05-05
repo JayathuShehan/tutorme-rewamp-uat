@@ -1,3 +1,5 @@
+import type { BlogStatus } from "@/configs/options";
+import { Blogs } from "./response-types";
 export type ContactUsRequest = {
   message: string;
   sender: {
@@ -38,22 +40,44 @@ export type UpdateProfileRequest = {
   id: string;
   payload: {
     name?: string;
+    fullName?: string;
     email?: string;
     grade?: string;
     subjects?: string[];
     country?: string;
     phoneNumber?: string;
+    contactNumber?: string;
     city?: string;
     state?: string;
     region?: string;
     zip?: string;
     address?: string;
     birthday?: string | Date;
-    tutorType?: string;
+    dateOfBirth?: string | Date;
+    age?: number;
+    tutorType?: string | string[];
     gender?: string;
+    nationality?: string;
+    race?: string;
     duration?: string;
+    frequency?: string;
     timeZone?: string;
     language?: string;
+    availability?: string;
+    rate?: string;
+    grades?: string[];
+    tutoringLevels?: string[];
+    preferredLocations?: string[];
+    tutorTypes?: string[];
+    highestEducation?: string;
+    yearsExperience?: number;
+    tutorMediums?: string[];
+    academicDetails?: string;
+    teachingSummary?: string;
+    studentResults?: string;
+    sellingPoints?: string;
+    certificatesAndQualifications?: string[];
+    avatar?: string;
   };
 };
 
@@ -86,8 +110,9 @@ export type FetchLevelRequest = {
 export type FetchPapersRequest = {
   page: number;
   limit: number;
-  grade: string;
-  subject: string;
+  grade?: string;
+  subject?: string;
+  medium?: string;
 };
 
 export type FetchGradesRequest = {
@@ -105,32 +130,27 @@ export type FetchTuitionRatesRequest = {
   page?: number;
   limit?: number;
 };
+
+export type TuitionRateBandRequest = {
+  minimumRate: number;
+  maximumRate: number;
+};
 export type UpdateBlogRequest = {
   id: string;
   blogId: string;
-  faqs: string[];
-  tags: string[];
-  name: string;
-  avatar: string;
-  role: string;
-  image?: string;
-  relatedArticles: string[];
-  status?: "pending" | "approved" | "rejected";
-  authorName?: string;
   title?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
+  image?: string;
+  content?: Blogs["content"];
+  faqs?: Array<{ _id?: string; question: string; answer: string }>;
+  tags?: string[];
+  relatedArticles?: string[];
+  status?: BlogStatus;
 };
 
 export type FetchBlogsRequest = {
   blogId?: string;
-  faqs?: string[];
-  image?: string;
-  name?: string;
   id?: string;
-  tags?: string;
-  status?: "pending" | "published" | "draft";
+  status?: BlogStatus;
   authorName?: string;
   title?: string;
   page?: number;
@@ -177,6 +197,7 @@ export type FetchTuitionAssignmentsRequest = {
 export type FindMyTutorRequest = {
   fullName: string;
   email: string;
+  password: string;
   contactNumber: string;
   dateOfBirth: string;
   age: number;
@@ -184,7 +205,7 @@ export type FindMyTutorRequest = {
   nationality: string;
   race: string;
 
-  tutoringLevels: string[];
+  classType: string[];
   preferredLocations: string[];
 
   tutorType: string[];
@@ -199,7 +220,7 @@ export type FindMyTutorRequest = {
   sellingPoints: string;
   academicDetails: string;
 
-  certificatesAndQualifications: string[];
+  certificatesAndQualifications: { type: string; url: string }[];
   agreeTerms: boolean;
   agreeAssignmentInfo: boolean;
 };

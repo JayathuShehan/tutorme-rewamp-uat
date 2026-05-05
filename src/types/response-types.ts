@@ -36,19 +36,22 @@ export type Level = {
   title: string;
 };
 
+export type Rate = {
+  minimumRate: string | number;
+  maximumRate: string | number;
+};
+
 export type TuitionRateItem = {
   _id: string;
   title: string;
   grade: Grade;
   subject: Subject;
-  govTuitionRate: Rate[];
-  partTimeTuitionRate: Rate[];
-  fullTimeTuitionRate: Rate[];
+  universityStudentsRate: Rate;
+  partTimeTutorRate: Rate;
+  fullTimeTutorRate: Rate;
+  moeTeacherRate: Rate;
 };
-export type Rate = {
-  minimumRate: string;
-  maximumRate: string;
-};
+
 export type TuitionRateGroup = {
   grade: any;
   subjects: any;
@@ -104,6 +107,17 @@ export type Grade = BaseEntity &
     subjects: Subject[];
   };
 
+type PaperMedium =
+  | string
+  | {
+      id?: string;
+      title?: string;
+      name?: string;
+      label?: string;
+      text?: string;
+      value?: string;
+    };
+
 // Paper
 export type Paper = BaseEntity &
   WithTitleDescription & {
@@ -112,6 +126,10 @@ export type Paper = BaseEntity &
     subject: Subject;
     year: string;
     url: string;
+    medium?: PaperMedium;
+    language?: PaperMedium;
+    languages?: PaperMedium[];
+    mediums?: PaperMedium[];
   };
 
 export type Blogs = BaseEntity &
@@ -119,22 +137,24 @@ export type Blogs = BaseEntity &
     _id: string;
     id: string;
     title: string;
+    /** SEO-friendly slug, e.g. "the-business-value-of-software-qa" */
+    slug?: string;
     image: string;
     type: string;
-    status: "pending" | "published" | "draft";
+    status: "pending" | "approved" | "rejected";
     author: {
-      name: string;
-      avatar: string;
-      role: string;
+      /** MongoDB ObjectId of the user who created the blog */
+      id: string;
+      role: "admin" | "tutor";
     };
     relatedArticles: Array<{
       id: string;
+      slug?: string;
       title: string;
       image: string;
-      author: {
-        name: string;
-        avatar: string;
-        role: string;
+      author?: {
+        id: string;
+        role: "admin" | "tutor";
       };
     }>;
     tags: Array<{
@@ -145,6 +165,10 @@ export type Blogs = BaseEntity &
       | { type: "paragraph"; text: string }
       | { type: "heading"; text: string; level: number }
       | { type: "image"; src: string; caption?: string }
+      | { type: "table"; headers: string[]; rows: string[][] }
+      | { type: "quote"; text: string; citation?: string }
+      | { type: "list"; items: string[]; style: "ordered" | "unordered" }
+      | { type: "embed"; src?: string; html?: string }
     >;
     faqs: Array<{
       _id: string;
@@ -252,21 +276,46 @@ export type ProfileResponse = {
   grades: Grade[];
   subjects: Subject[];
   name: string;
+  fullName?: string;
   email: string;
   country: string;
   phoneNumber: string;
+  contactNumber?: string;
   city: string;
   state: string;
   region: string;
   zip: string;
   address: string;
   birthday: string;
-  tutorType: string;
-  gender: "Male" | "Female" | "None";
+  dateOfBirth?: string;
+  tutorType: string | string[];
+  gender: "Male" | "Female" | "Others" | "None";
+  age?: number;
+  nationality?: string;
+  race?: string;
   duration: string;
   frequency: string;
   timeZone: string;
   language: string;
+  availability?: string;
+  rate?: string;
+  avatar?: string;
+  classType?: string[];
+  tutoringLevels?: string[];
+  preferredLocations?: string[];
+  tutorTypes?: string[];
+  highestEducation?: string;
+  yearsExperience?: number;
+  tutorMediums?: string[];
+  teachingSummary?: string;
+  studentResults?: string;
+  sellingPoints?: string;
+  academicDetails?: string;
+  certificatesAndQualifications?: Array<
+    string | { type?: string; url?: string }
+  >;
+  tutor?: Partial<ProfileResponse>;
+  tutorProfile?: Partial<ProfileResponse>;
 } & Id &
   Timestamp;
 
@@ -326,6 +375,11 @@ export type FindMyTutorResponse = {
   tutorTypeInfo: TutorTypeInfo;
 } & Id &
   Timestamp;
+
+export type TutorEmailAvailabilityResponse = {
+  available: boolean;
+  message: string;
+};
 
 export type FaqResponse = PaginatedResponse<Faq>;
 export type SubjectResponse = PaginatedResponse<Subject>;

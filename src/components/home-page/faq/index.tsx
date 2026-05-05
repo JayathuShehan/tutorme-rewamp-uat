@@ -4,6 +4,7 @@ import { useFetchFaqsQuery } from "@/store/api/splits/faqs";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import Link from "next/link";
 
 type FaqItem = {
   question: string;
@@ -31,7 +32,7 @@ const FaqPill = ({
 
   return (
     <div
-      className="w-full rounded-2xl bg-white overflow-hidden"
+      className="w-full rounded-3xl bg-white overflow-hidden"
       style={{ animation: "fadeIn 0.35s ease both" }}
     >
       {/* Header button */}
@@ -40,7 +41,7 @@ const FaqPill = ({
         className="flex w-full items-center justify-between px-6 py-4 text-left gap-4 group"
         aria-expanded={isOpen}
       >
-        <span className="text-sm sm:text-base font-semibold text-gray-900 leading-snug group-hover:text-blue-600 transition-colors duration-200">
+        <span className="text-base font-semibold text-gray-900 leading-snug group-hover:text-blue-600 transition-colors duration-200">
           {question}
         </span>
         <span
@@ -64,7 +65,7 @@ const FaqPill = ({
           transition: "max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
-        <p className="px-6 pb-5 text-sm text-gray-600 leading-relaxed">
+        <p className="px-6 pb-5 text-base text-[#4B5563] leading-relaxed">
           {answer}
         </p>
       </div>
@@ -100,7 +101,7 @@ const FaqSkeleton = () => (
 );
 
 const Faqs = () => {
-  const [page, setPage] = useState(1);
+  const page = 1;
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -111,11 +112,11 @@ const Faqs = () => {
 
   const totalItems = data?.totalResults || 0;
 
-  const loadMore = () => {
-    if (faqs.length < totalItems) {
-      setPage((prev) => prev + 1);
-    }
-  };
+  // const loadMore = () => {
+  //   if (faqs.length < totalItems) {
+  //     setPage((prev) => prev + 1);
+  //   }
+  // };
 
   useEffect(() => {
     if (data?.results) {
@@ -128,50 +129,70 @@ const Faqs = () => {
   };
 
   return (
-    <div
-      id="faq-section"
-      className="mx-auto max-w-7xl py-12 lg:py-16 px-4 lg:px-12 bg-faqblue rounded-2xl faq-bg"
-    >
-      {/* Section heading */}
-      <h3 className="text-sm font-semibold text-white text-center mb-3 tracking-widest uppercase">
-        FAQ
-      </h3>
-      <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-white mb-10">
-        Frequently asked <br /> questions.
-      </h2>
+    <div className="px-4 pb-8 lg:px-8 lg:pb-12">
+      <div
+        id="faq-section"
+        className="mx-auto rounded-3xl max-w-7xl py-8 lg:py-12 px-4 lg:px-12 bg-faqblue faq-bg"
+      >
+        {/* Section heading */}
+        <h2 className="text-4xl font-bold text-center text-white leading-[1.2] mb-10">
+          Frequently asked <br /> questions.
+        </h2>
 
-      {/* FAQ list — single column so expansions shift items fluidly */}
-      <div className="flex flex-col gap-3 max-w-3xl mx-auto">
+        {/* FAQ list — two columns */}
         {isFetching && page === 1 ? (
-          Array.from({ length: FAQ_LIMIT }, (_, i) => <FaqSkeleton key={i} />)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-5xl mx-auto">
+            {Array.from({ length: FAQ_LIMIT }, (_, i) => (
+              <FaqSkeleton key={i} />
+            ))}
+          </div>
         ) : isError ? (
           <div className="w-full rounded-2xl bg-red-100 py-4 px-6 text-center text-red-700">
             Failed to load FAQs. Please try again later.
           </div>
         ) : (
-          faqs.map((faq, index) => (
-            <FaqPill
-              key={index}
-              question={faq.question}
-              answer={faq.answer}
-              isOpen={openIndex === index}
-              onToggle={() => handleToggle(index)}
-            />
-          ))
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-5xl mx-auto items-start">
+            <div className="flex flex-col gap-3">
+              {faqs
+                .filter((_, i) => i % 2 === 0)
+                .map((faq, i) => (
+                  <FaqPill
+                    key={i * 2}
+                    question={faq.question}
+                    answer={faq.answer}
+                    isOpen={openIndex === i * 2}
+                    onToggle={() => handleToggle(i * 2)}
+                  />
+                ))}
+            </div>
+            <div className="flex flex-col gap-3">
+              {faqs
+                .filter((_, i) => i % 2 !== 0)
+                .map((faq, i) => (
+                  <FaqPill
+                    key={i * 2 + 1}
+                    question={faq.question}
+                    answer={faq.answer}
+                    isOpen={openIndex === i * 2 + 1}
+                    onToggle={() => handleToggle(i * 2 + 1)}
+                  />
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Read More — navigates to the dedicated FAQ page */}
+        {!isFetching && totalItems > 0 && (
+          <div className="text-center mt-8">
+            <Link
+              href="/faq"
+              className="inline-block px-8 py-3 border-2 border-white text-white text-base font-semibold rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-300"
+            >
+              Read More
+            </Link>
+          </div>
         )}
       </div>
-
-      {/* Load more */}
-      {!isFetching && faqs.length < totalItems && (
-        <div className="text-center mt-8">
-          <button
-            onClick={loadMore}
-            className="px-8 py-3 border-2 border-white text-white text-sm font-semibold rounded-xl hover:bg-white hover:text-blue-600 transition-all duration-300"
-          >
-            See More
-          </button>
-        </div>
-      )}
     </div>
   );
 };
